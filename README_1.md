@@ -2,7 +2,7 @@
 
 Statistical analysis of Australian A-League Men player data, built for the
 [Untapped Talent](https://untappedtalentfootball.blogspot.com) blog (see the
-[latest post](https://untappedtalentfootball.blogspot.com/2026/07/do-league-defenders-actually-tackle.html)) — covering
+[latest post](https://untappedtalentfootball.blogspot.com/2026/07/do-league-defenders-actually-tackle.html)), covering
 Australian football scouting and analysis that doesn't get much coverage
 elsewhere.
 
@@ -20,7 +20,7 @@ test with Bonferroni correction.
 
 **Finding:** Forwards tackle significantly less than both other positions
 (p < 0.001), but Defenders and Midfielders show no statistically significant
-difference in Tackles Won (p = 1.00, adjusted) — despite the positional
+difference in Tackles Won (p = 1.00, adjusted), despite the positional
 label.
 
 ## Data Sources & a Note on Data Availability
@@ -52,5 +52,5 @@ install.packages(c("readxl", "dplyr", "ggplot2", "FSA"))
 
 ## More Coming
 
-This is an ongoing project — next up: Interceptions by position, followed by
+This is an ongoing project. Next up: Interceptions by position, followed by
 a broader look at U23 centre-backs to watch in the A-League.
