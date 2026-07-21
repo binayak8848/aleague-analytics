@@ -1,0 +1,138 @@
+---
+title: "Do A-League Defenders Tackle More Than Midfielders?"
+author: "Untapped Talent: Australian Football Scouting & Analysis"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Introduction
+
+Conventional wisdom says tackling is a defender's job. This analysis tests that
+assumption against real 2025/26 A-League Men player data, using position group
+comparisons and formal hypothesis testing.
+
+## Loading and Preparing the Data
+
+```{r load-data}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+
+standard <- read_excel("A_League_Stats_Cleaned.xlsx", sheet = "Players Standard Sheet")
+defense <- read_excel("Defense_Passing_Cleaned.xlsx", sheet = "Defense Players stats")
+
+merged <- standard %>%
+  left_join(defense %>% select(Player, Squad, `Tackles Won`), by = c("Player", "Squad")) %>%
+  mutate(PrimaryPos = sub(",.*", "", Position)) %>%
+  filter(PrimaryPos != "GK")  # exclude goalkeepers - not a meaningful comparison group
+```
+
+## Sample Sizes by Position
+
+```{r sample-sizes}
+table(merged$PrimaryPos)
+```
+
+## Visualizing the Distribution
+
+```{r boxplot}
+ggplot(merged, aes(x = PrimaryPos, y = `Tackles Won`, fill = PrimaryPos)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = 21, outlier.size = 2.5, outlier.fill = "white") +
+  geom_jitter(width = 0.15, alpha = 0.35, size = 1.5, color = "black") +
+  scale_fill_manual(values = c("DF" = "#2E86AB", "MF" = "#F18F01", "FW" = "#C73E1D")) +
+  labs(
+    title = "Tackles Won by Position",
+    subtitle = "A-League Men, 2025/26 season",
+    x = "Position",
+    y = "Tackles Won"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(color = "gray40"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+The boxplot shows Defenders (DF) and Midfielders (MF) with visually similar
+medians, while Forwards (FW) sit noticeably lower. Several high-tackling
+outliers are visible in both DF and MF groups.
+
+## Testing for Normality
+
+Before choosing between ANOVA and a non-parametric alternative, we test
+whether Tackles Won is normally distributed:
+
+```{r shapiro}
+shapiro.test(merged$`Tackles Won`)
+```
+
+The p-value is far below 0.05, indicating the data significantly deviates
+from a normal distribution. This rules out a standard one-way ANOVA as the
+appropriate test here, since ANOVA assumes normally distributed data within
+each group.
+
+## Kruskal-Wallis Test
+
+Given the non-normal distribution, we use the Kruskal-Wallis test — the
+non-parametric equivalent of a one-way ANOVA — to test whether Tackles Won
+differs significantly across the three position groups.
+
+```{r kruskal}
+kruskal.test(`Tackles Won` ~ PrimaryPos, data = merged)
+```
+
+The result is highly significant (p < 0.001), indicating at least one
+position group differs meaningfully from the others.
+
+## Post-Hoc Pairwise Comparison (Dunn's Test)
+
+Kruskal-Wallis tells us a difference exists somewhere, but not which specific
+pairs of groups differ. We follow up with Dunn's test, using a Bonferroni
+correction to account for running multiple pairwise comparisons.
+
+```{r dunn}
+library(FSA)
+dunnTest(`Tackles Won` ~ PrimaryPos, data = merged, method = "bonferroni")
+```
+
+## Results Summary
+
+```{r results-table, echo=FALSE}
+results <- data.frame(
+  Comparison = c("DF vs FW", "DF vs MF", "FW vs MF"),
+  `Adjusted P-value` = c("8.21e-08", "1.00", "2.38e-08"),
+  `Significant (a = 0.05)` = c("Yes", "No", "Yes"),
+  check.names = FALSE
+)
+knitr::kable(results)
+```
+
+## Conclusion
+
+Forwards tackle significantly less than both Defenders and Midfielders, which
+is expected. However, **Defenders and Midfielders show no statistically
+significant difference in Tackles Won** (p = 1.00, adjusted). Despite the
+positional label, A-League midfielders in the 2025/26 season are contributing
+a statistically indistinguishable volume of tackling compared to defenders.
+
+This may reflect modern pressing systems that ask midfielders to contest the
+ball higher up the pitch, rather than defensive responsibility sitting solely
+with the back line.
+
+## Limitations
+
+- This analysis uses `PrimaryPos`, derived by taking the first listed position
+  for players with multiple position tags (e.g. "MF,FW" becomes "MF"). Some
+  players may be miscategorized if they play a genuinely hybrid role.
+- Tackles Won alone doesn't capture full defensive contribution (e.g.
+  interceptions, blocks, clearances). Deeper defensive metrics like
+  Clearances were unavailable at the time of writing due to FBref's loss of
+  its Opta data licence in January 2026.
+- Season-aggregate data cannot account for tactical differences between
+  clubs, which may explain some of the within-group variation.
