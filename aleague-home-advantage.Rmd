@@ -1,0 +1,77 @@
+---
+title: "Home Advantage in the A-League: Points Say No, Goals Say Yes"
+subtitle: "Untapped Talent: Australian Football Scouting & Analysis"
+date: "2026-09-23"
+output: html_document
+---
+
+## Hypothesis
+
+Is home advantage real in the A-League, or is it a myth? Home and away
+records are paired by team (13 home games, 13 away games each), so this
+uses paired tests rather than independent-sample tests.
+
+*Data: Soccerway, 2025–26 A-League Men season, home/away splits.*
+
+```{r}
+df <- read.csv("aleague 202526 home away.csv")
+```
+
+## Points per game
+
+```{r}
+diff <- df$home_ppg - df$away_ppg
+
+shapiro.test(diff)
+```
+
+Shapiro-Wilk is not significant (p = 0.241), so the differences are
+normally distributed and a paired t-test is appropriate.
+
+```{r}
+t.test(df$home_ppg, df$away_ppg, paired = TRUE)
+```
+
+```{r}
+mean(diff)
+d_cohen_ppg <- mean(diff) / sd(diff)
+d_cohen_ppg
+```
+
+Home teams average 0.096 more points per game than away teams, but this
+is not statistically significant (p = 0.198). Cohen's d = 0.395 is a
+small-to-medium effect, with only 12 teams, the test is underpowered
+to detect it.
+
+## Goal difference
+
+```{r}
+gd_diff <- df$home_gd - df$away_gd
+
+shapiro.test(gd_diff)
+```
+
+Normal again (p = 0.351), so paired t-test applies.
+
+```{r}
+t.test(df$home_gd, df$away_gd, paired = TRUE)
+```
+
+```{r}
+mean(gd_diff)
+d_cohen_gd <- mean(gd_diff) / sd(gd_diff)
+d_cohen_gd
+```
+
+Home teams average +2.42 goal difference, away teams -2.42 which is a swing of
+4.83 per team, and this **is** statistically significant (p = 0.0064),
+with a large effect size (d = 0.969).
+
+## Conclusion
+
+Points say home advantage isn't real in the A-League. Goal difference
+says otherwise. Points are a blunt instrument a 1-0 win and a 4-0 win
+count the same, so home advantage shows up in how convincingly teams
+win or lose, even when it doesn't reliably convert into extra points.
+
+
